@@ -1,8 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/context/ThemeProvider";
-import Navbar from "@/components/shared/Navbar";
-import Footer from "@/components/shared/Footer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,7 +23,7 @@ export default function RootLayout({ children }) {
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      suppressHydrationWarning // Required for next-themes to inject class cleanly
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <ThemeProvider>
@@ -42,13 +40,9 @@ export default function RootLayout({ children }) {
             }}
           />
           
-          <Navbar />
+          {/* Main viewport entry injection node */}
+          {children}
           
-          <main className="grow">
-            {children}
-          </main>
-          
-          <Footer />
         </ThemeProvider>
       </body>
     </html>
