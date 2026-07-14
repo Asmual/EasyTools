@@ -2,22 +2,61 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
 import toast from 'react-hot-toast';
+import { authClient } from '@/lib/auth-client';
 
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error('Please enter both email and password.');
       return;
     }
-    toast.success('Authentication successful! Redirecting to workspace...');
+
+    try {
+      setLoading(true);
+
+      // Trigger BetterAuth email identity provider authentication sequence
+      const { data, error } = await authClient.signIn.email({
+        email: email,
+        password: password,
+        callbackURL: '/',
+      });
+
+      if (error) {
+        toast.error(error.message || 'Authentication sequence failed.');
+        return;
+      }
+
+      toast.success('Authentication successful! Routing to workspace...');
+      // Imperative router push to context repository dashboard
+      router.push('/categories');
+    } catch (err) {
+      toast.error('An unexpected server-side exception intercepted the request.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      // Dispatch explicit runtime request redirection targeting Google Identity Service
+      await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: '/categories',
+      });
+    } catch (err) {
+      toast.error('Google provider execution sequence aborted.');
+    }
   };
 
   return (
@@ -56,7 +95,8 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="developer@example.com"
-                className="w-full bg-[#0b1329] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white outline-none transition-colors"
+                disabled={loading}
+                className="w-full bg-[#0b1329] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white outline-none transition-colors disabled:opacity-50"
               />
             </div>
           </div>
@@ -80,12 +120,14 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-[#0b1329] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-9 pr-10 py-2.5 text-xs text-white outline-none transition-colors"
+                disabled={loading}
+                className="w-full bg-[#0b1329] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-9 pr-10 py-2.5 text-xs text-white outline-none transition-colors disabled:opacity-50"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 text-slate-500 hover:text-slate-300 text-sm focus:outline-none cursor-pointer"
+                disabled={loading}
+                className="absolute right-3 text-slate-500 hover:text-slate-300 text-sm focus:outline-none cursor-pointer disabled:opacity-50"
               >
                 {showPassword ? <FiEyeOff /> : <FiEye />}
               </button>
@@ -95,24 +137,26 @@ export default function Login() {
           {/* Trigger validation submission button */}
           <button
             type="submit"
-            className="w-full py-2.5 px-4 mt-2 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_15px_rgba(59,130,246,0.2)] transition-all cursor-pointer"
+            disabled={loading}
+            className="w-full py-2.5 px-4 mt-2 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_15px_rgba(59,130,246,0.2)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sign In
+            {loading ? 'Authenticating...' : 'Sign In'}
           </button>
         </form>
 
         {/* Decorative layout contextual separator */}
         <div className="relative flex py-4 items-center">
-          <div className="flex-grow border-t border-slate-800/60"></div>
-          <span className="flex-shrink mx-3 text-[10px] uppercase font-bold text-slate-500 tracking-wider">Or continue with</span>
-          <div className="flex-grow border-t border-slate-800/60"></div>
+          <div className="grow border-t border-slate-800/60"></div>
+          <span className="shrink mx-3 text-[10px] uppercase font-bold text-slate-500 tracking-wider">Or continue with</span>
+          <div className="grow border-t border-slate-800/60"></div>
         </div>
 
         {/* Real flat color Google SSO execution node */}
         <button
           type="button"
-          onClick={() => toast.success('Connecting safely with secure Google identity provider...')}
-          className="w-full py-2.5 px-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-xs font-semibold text-slate-200 flex items-center justify-center space-x-2 transition-colors cursor-pointer"
+          onClick={handleGoogleLogin}
+          disabled={loading}
+          className="w-full py-2.5 px-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-xs font-semibold text-slate-200 flex items-center justify-center space-x-2 transition-colors cursor-pointer disabled:opacity-50"
         >
           <FcGoogle className="text-base" />
           <span>Login with Google</span>
@@ -121,7 +165,7 @@ export default function Login() {
         {/* Redirection target footer anchor node */}
         <p className="text-center text-xs text-slate-500 mt-6">
           Don&apos;t have an account?{' '}
-          <Link href="/registration" className="text-blue-500 hover:underline font-semibold">
+          <Link href="/register" className="text-blue-500 hover:underline font-semibold">
             Create Free Account
           </Link>
         </p>
