@@ -8,5 +8,5 @@ git push -u origin main
 
 
 git add .
-git commit -m "feat: init boilerplate, responsive nav/footer layout, hero section, theme switcher structure, and custom 404 page"
+git commit -m "feat: integrate MongoDB and improve login/register pages"
 git push

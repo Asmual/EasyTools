@@ -2,23 +2,61 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { FiUser, FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
 import toast from 'react-hot-toast';
+import { authClient } from '@/lib/auth-client';
 
 export default function Registration() {
+  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     if (!name || !email || !password) {
       toast.error('Please populate all operational inputs.');
       return;
     }
-    toast.success('Registration successful! Setup complete.');
+
+    try {
+      setLoading(true);
+      // Initiate BetterAuth register user pipeline sequence
+      const { data, error } = await authClient.signUp.email({
+        email: email,
+        password: password,
+        name: name,
+        callbackURL: '/login',
+      });
+
+      if (error) {
+        toast.error(error.message || 'Registration pipeline failed.');
+        return;
+      }
+
+      toast.success('Registration successful! Redirecting to login...');
+      router.push('/login');
+    } catch (err) {
+      toast.error('An unexpected error occurred during database registration.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleRegister = async () => {
+    try {
+      // Direct user authorization pipeline towards Google Identity Provider
+      await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: '/categories',
+      });
+    } catch (err) {
+      toast.error('Google authentication route aborted unexpectedly.');
+    }
   };
 
   return (
@@ -57,7 +95,8 @@ export default function Registration() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Alex Mercer"
-                className="w-full bg-[#0b1329] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white outline-none transition-colors"
+                disabled={loading}
+                className="w-full bg-[#0b1329] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white outline-none transition-colors disabled:opacity-50"
               />
             </div>
           </div>
@@ -76,7 +115,8 @@ export default function Registration() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="alex@example.com"
-                className="w-full bg-[#0b1329] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white outline-none transition-colors"
+                disabled={loading}
+                className="w-full bg-[#0b1329] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white outline-none transition-colors disabled:opacity-50"
               />
             </div>
           </div>
@@ -95,12 +135,14 @@ export default function Registration() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Create secure code"
-                className="w-full bg-[#0b1329] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-9 pr-10 py-2.5 text-xs text-white outline-none transition-colors"
+                disabled={loading}
+                className="w-full bg-[#0b1329] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-9 pr-10 py-2.5 text-xs text-white outline-none transition-colors disabled:opacity-50"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 text-slate-500 hover:text-slate-300 text-sm focus:outline-none cursor-pointer"
+                disabled={loading}
+                className="absolute right-3 text-slate-500 hover:text-slate-300 text-sm focus:outline-none cursor-pointer disabled:opacity-50"
               >
                 {showPassword ? <FiEyeOff /> : <FiEye />}
               </button>
@@ -110,24 +152,26 @@ export default function Registration() {
           {/* Trigger registration submission button */}
           <button
             type="submit"
-            className="w-full py-2.5 px-4 mt-2 rounded-xl bg-linear-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_15px_rgba(99,102,241,0.2)] transition-all cursor-pointer"
+            disabled={loading}
+            className="w-full py-2.5 px-4 mt-2 rounded-xl bg-linear-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_15px_rgba(99,102,241,0.2)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Register Workspace
+            {loading ? 'Processing...' : 'Register Workspace'}
           </button>
         </form>
 
         {/* Decorative layout contextual separator */}
         <div className="relative flex py-4 items-center">
-          <div className="flex-grow border-t border-slate-800/60"></div>
-          <span className="flex-shrink mx-3 text-[10px] uppercase font-bold text-slate-500 tracking-wider">Or join with</span>
-          <div className="flex-grow border-t border-slate-800/60"></div>
+          <div className="grow border-t border-slate-800/60"></div>
+          <span className="shrink mx-3 text-[10px] uppercase font-bold text-slate-500 tracking-wider">Or join with</span>
+          <div className="grow border-t border-slate-800/60"></div>
         </div>
 
         {/* Real flat color Google SSO registration interface node */}
         <button
           type="button"
-          onClick={() => toast.success('Initiating safe registration sequence via secure Google identity network...')}
-          className="w-full py-2.5 px-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-xs font-semibold text-slate-200 flex items-center justify-center space-x-2 transition-colors cursor-pointer"
+          onClick={handleGoogleRegister}
+          disabled={loading}
+          className="w-full py-2.5 px-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-xs font-semibold text-slate-200 flex items-center justify-center space-x-2 transition-colors cursor-pointer disabled:opacity-50"
         >
           <FcGoogle className="text-base" />
           <span>Register with Google</span>
