@@ -1,26 +1,37 @@
 @import "tailwindcss";
 
+/* Global variable configuration for Light and Dark themes */
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
+/* Automatically switch variables when next-themes injects the .dark class */
+.dark {
+  --background: #0b1329; /* Kept your premium dark background color */
+  --foreground: #ededed;
+}
+
+/* Tailwind v4 Unified Configuration Engine */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Retaining your extended brand colors securely */
+  --color-brand-light: #60a5fa;
+  --color-brand: #3b82f6;
+  --color-brand-dark: #1d4ed8;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Strict base element rules mapping */
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    transition-property: color, background-color;
+    transition-duration: 300ms;
+    min-height: 100vh;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
